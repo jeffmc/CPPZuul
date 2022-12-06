@@ -22,6 +22,7 @@ int strcicmp(char const *a, char const *b)
 }
 
 // All cstrings within my types wrapped by this.
+// Case sensitive state, but case ignored comparisons.
 // Used as key in std::unordered_map
 struct jstring {
 	static constexpr const size_t LEN = 21; // including null terminating character
@@ -66,16 +67,26 @@ struct std::hash<jstring> {
 
 struct Item {
 	jstring name;
+	Item(jstring&& name) : name(name) {}
+
+	const char* name_cstr() const {
+		return name.data;
+	}
+
 };
 
 class Room {
 	jstring name;
-	std::vector<Item*> items;
 	std::unordered_map<jstring, Room*> portals;
 public:
+	std::vector<Item*> items; // TODO: Make private
 	Room(jstring&& name) : name(name) {}
-	const char* name_cstr() {
+	const char* name_cstr() const {
 		return name.data;
+	}
+
+	void add(Item* ptr) {
+		items.push_back(ptr);
 	}
 };
 
@@ -92,7 +103,11 @@ public:
 	void print() {
 		printf("World \"%s\":\n", name.data);
 		for (auto it = rooms.cbegin(); it != rooms.cend(); ++it) {
-			printf("  %s\n", (*it)->name_cstr());
+			const Room& r = *(*it);
+			printf("  %s\n", r.name_cstr());
+			for (auto it=r.items.cbegin();it!=r.items.cend();++it) {
+				printf("    %s\n", (*it)->name_cstr());
+			}
 		}
 	}
 };
