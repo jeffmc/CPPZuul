@@ -27,10 +27,23 @@ public:
 	void set_item(Item* ptr) { item = ptr; }
     bool hasItem() const { return item != nullptr; }
     const char* itemCstr() const { return item->name_cstr(); }
+    Item* pickupItem() { // Transfer ownership of item to player
+        Item* tmp = item;
+        item = nullptr;
+        return tmp;
+    }
+
+    Room* portal_dest(const char* att) {
+		try { // Try to find the user's direction!
+			Room* r = portals.at({att}); // Find room from given heading.
+			return r; // Return found destination 
+		} catch (...) { return nullptr; } // When key is not found in map.
+		
+    }
 
     void print_items() {
         if (!hasItem()) { // If item is nullptr
-            printf("No items.\n");
+            printf("%s has no items.\n", name_cstr());
             return;
         }
         printf("Items: %s\n", item->name_cstr());
@@ -61,17 +74,33 @@ public:
     }
 	const char* name_cstr() const { return name.data; }
 
-    size_t itemCount() {
-        return playerInv.size();
+	const char* room_name_cstr() const { return playerLoc->name_cstr(); }
+	bool roomHasItem() const { return playerLoc->hasItem(); }
+    void pickupItem() { 
+        Item* i = playerLoc->pickupItem();
+        if (i) {
+            printf("Picked up \"%s\"\n",i->name_cstr());
+            playerInv.push_back(i);
+        } else {
+            printf("No item in this room!\n");
+        }
     }
 
+    size_t itemCount() const { return playerInv.size(); }
     void printInv(const char* prefix) {
         for (auto it = playerInv.cbegin();it!=playerInv.cend();++it) {
             printf("%s%s\n", prefix, (*it)->name_cstr());
         }
     }
 
-    void moveTo(Room* ptr) { playerLoc = ptr; }
+    void moveTo(const char* headingAtt) {
+        Room* r = playerLoc->portal_dest(headingAtt);
+        if (r) {
+            playerLoc = r;
+        } else {
+            printf("Couldn't find \"%s\"!\n", headingAtt);
+        }
+    }
 	void printLocation() {
         playerLoc->print_items();
         playerLoc->print_portals();

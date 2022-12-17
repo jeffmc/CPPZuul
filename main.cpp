@@ -3,7 +3,7 @@
 #include "main.hpp"
 #include "default.hpp"
 
-const int winningInv = 7;
+const int winningInvCount = 7;
 const char* separator = "-------------------------------";
 
 int main() {
@@ -36,7 +36,10 @@ int main() {
 
 // The the program state for a win, if won, stop the game and congradulate!
 void checkWin(ProgState& ps) {
-
+	if (ps.world.itemCount() >= winningInvCount) {
+		ps.running = false; // End loop
+		printf("Congradulations on the win!\n");
+	}
 }
 
 namespace Command {
@@ -69,18 +72,26 @@ namespace Command {
 
 	// Go a specfied heading from this room, moving the playerLoc there.
 	void Go(ProgState& ps) {
-		
+		if (ps.cb.Tokens() != 2) {
+			printf("Need a heading to go towards!\n");
+			return;
+		}
+		ps.world.moveTo(ps.cb.GetLowerToken(1));
 	}
 
 	// List items in players inventory
 	void Inv(ProgState& ps) {
-		printf("Player inventory (%u,%d): \n", ps.world.itemCount(),winningInv);
+		printf("Player inventory (%u/%d): \n", ps.world.itemCount(),winningInvCount);
 		ps.world.printInv("    ");
 		printf("\n");
 	}
 
 	// Pickup specified item from current room, put in player inventory.
 	void Pickup(ProgState& ps) {
-
+		if (!ps.world.roomHasItem()) {
+			printf("%s doesn't have any items!\n", ps.world.room_name_cstr());
+			return;
+		} 
+		ps.world.pickupItem();
 	}
 }
